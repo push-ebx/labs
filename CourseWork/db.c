@@ -2,13 +2,12 @@
 #include <mysql/mysql.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
 
-#define HOST "localhost"
-#define PASSWORD ""
-#define USER "root"
-#define DATABASE "Products"
-#define MAX_LEN 100
+#define HOST "localhost"    // имя сервера
+#define PASSWORD ""         // пароль от бд
+#define USER "root"         // имя пользователя бд
+#define DATABASE "Products" //название бд
+#define MAX_LEN 100         // максимальная длина строки
 
 void concat(char *[], char *, int);
 void add_product(MYSQL *, char[], char[], char[]);
@@ -26,17 +25,17 @@ void selection_minimum_basket(MYSQL *con, char[100][MAX_LEN], int);
 
 int main(int argc, char **argv)
 {
-  MYSQL *con = mysql_init(NULL); // сессия подключения
+  MYSQL *con = mysql_init(NULL); // инициализация сессии
   if (con == NULL)
   {
-    printf("error");
+    printf("error\n");
     exit(1);
   }
   if (mysql_real_connect(con, HOST, USER, PASSWORD, DATABASE, 0, NULL, 0) == NULL) // подключение
-    printf("error");
+    printf("error\n");
 
   rendering_UI(con);
-  mysql_close(con);
+  mysql_close(con); // закрываем сессию
   exit(0);
 }
 
@@ -44,9 +43,7 @@ void concat(char *query[], char result[MAX_LEN], int size)
 {
   result[0] = '\0';
   for (int i = 0; i < size; i++)
-  {
     strncat(result, query[i], MAX_LEN);
-  }
 }
 
 void print_commands()
@@ -60,38 +57,63 @@ void print_commands()
   printf("5 - Selection of the \"minimum basket\"\n\n");
 }
 
+void read_line(char str[100])
+{
+  char c;
+  for (int i = 0; i < 100; i++)
+    str[i] = '\0';
+
+  int i = 0;
+  if ((c = getchar()) != '\n')
+  {
+    str[i++] = c;
+    while ((c = getchar()) != '\n')
+      str[i++] = c;
+  }
+  else
+  {
+    i++;
+    while ((c = getchar()) != '\n')
+    {
+      str[i - 1] = c;
+      i++;
+    }
+  }
+}
+
 void rendering_UI(MYSQL *con)
 {
   char command[MAX_LEN];
   char title[MAX_LEN];
   char category[MAX_LEN];
   char price[MAX_LEN];
-
+  int i = 0;
+  char c;
   print_commands();
   while (1)
   {
-    scanf("%s", command);
+    read_line(command);
     print_commands();
     if (!strcmp(command, "Add product") || !strcmp(command, "1"))
     {
       printf("Enter title product>> ");
-      scanf("%s", title);
+      read_line(title);
       printf("Enter category product>> ");
-      scanf("%s", category);
+      read_line(category);
       printf("Enter price product>> ");
-      scanf("%s", price);
+      read_line(price);
       add_product(con, title, category, price);
     }
     else if (!strcmp(command, "Edit product") || !strcmp(command, "2"))
     {
       printf("Select a product to edit>> ");
-      scanf("%s", title);
+      read_line(title);
       edit_database(con, title);
     }
     else if (!strcmp(command, "Deleted product") || !strcmp(command, "3"))
     {
       printf("Enter product name to remove>> ");
-      scanf("%s", title);
+      read_line(title);
       deleted_product(con, title);
     }
     else if (!strcmp(command, "Print database") || !strcmp(command, "4"))
@@ -105,18 +127,15 @@ void rendering_UI(MYSQL *con)
       printf("Enter the count prodocts in list>> ");
       scanf("%d", &count);
 
-      for (int i = 0; i < count; i++)
+      for (int j = 0; j < count; j++)
       {
         printf("Enter the category product's>> ");
-        scanf("%s", basket[i]);
+        read_line(basket[j]);
       }
-
       selection_minimum_basket(con, basket, count);
     }
     else
-    {
       printf("Undefined command");
-    }
   }
 }
 
@@ -130,15 +149,13 @@ void selection_minimum_basket(MYSQL *con, char basket[100][100], int count)
     result[0] = '\0';
     concat(query, result, sizeof(query) / sizeof(query[0]));
     if (mysql_query(con, result))
-    {
-      printf("error");
-    }
+      printf("error\n");
     else
     {
       MYSQL_RES *result_sql = mysql_store_result(con);
       if (result_sql == NULL)
-        printf("error");
-      row = mysql_fetch_row(result_sql);
+        printf("error\n");
+      row = mysql_fetch_row(result_sql); // ответ от бд
       printf("%s\n", row[0]);
     }
   }
@@ -146,16 +163,14 @@ void selection_minimum_basket(MYSQL *con, char basket[100][100], int count)
 
 void deleted_product(MYSQL *con, char title[])
 {
-  char *query[] = {"DELETE from products WHERE title='", title, "';"};
+  char *query[] = {"DELETE from products WHERE title=\"", title, "\";"};
   char result[MAX_LEN];
   result[0] = '\0';
   concat(query, result, sizeof(query) / sizeof(query[0]));
   if (mysql_query(con, result))
-  {
-    printf("error");
-  }
+    printf("error\n");
   else
-    printf("Product removed successfully!\n");
+    mysql_affected_rows(con) ? printf("Product removed successfully!\n") : printf("Product not found\n"); // проверка на наличие файла
 }
 
 void edit_database(MYSQL *con, char title[])
@@ -164,22 +179,22 @@ void edit_database(MYSQL *con, char title[])
   char new_category[MAX_LEN];
   char new_price[MAX_LEN];
   printf("Enter a new title product>> ");
-  scanf("%s", new_title);
+  read_line(new_title);
   printf("Enter a new category product>> ");
-  scanf("%s", new_category);
+  read_line(new_category);
   printf("Enter a new price product>> ");
-  scanf("%s", new_price);
+  read_line(new_price);
   char *query[] = {"UPDATE products SET Title='", new_title,
                    "',Category='", new_category, "',Price='",
                    new_price, "' WHERE Title='", title, "';"};
   char result[MAX_LEN];
   result[0] = '\0';
   concat(query, result, sizeof(query) / sizeof(query[0]));
-  
+
   if (mysql_query(con, result))
-    printf("error");
+    printf("error\n");
   else
-    printf("Product edited successfully!\n");
+    mysql_affected_rows(con) ? printf("Product edited successfully!\n") : printf("Error, maybe the product was not found\n");
 }
 
 void add_product(MYSQL *con, char title[], char category[], char price[])
@@ -190,7 +205,7 @@ void add_product(MYSQL *con, char title[], char category[], char price[])
   concat(query, result, sizeof(query) / sizeof(query[0]));
 
   if (mysql_query(con, result))
-    printf("error");
+    printf("error\n");
   else
     printf("Product added successfully!\n");
 }
@@ -198,15 +213,15 @@ void add_product(MYSQL *con, char title[], char category[], char price[])
 void show_database(MYSQL *con)
 {
   if (mysql_query(con, "SELECT * FROM products ORDER BY Category"))
-    printf("error");
+    printf("error\n");
   else
   {
     MYSQL_RES *result = mysql_store_result(con);
 
     if (result == NULL)
-      printf("error");
+      printf("error\n");
 
-    int num_fields = mysql_num_fields(result);
+    int num_fields = mysql_num_fields(result); // количество колонок в таблице
     MYSQL_ROW row;
 
     printf("%-20s%-20s%-20s\n\n", "Title", "Category", "Price");
@@ -216,6 +231,6 @@ void show_database(MYSQL *con)
         printf("%-20s ", row[i] ? row[i] : "NULL");
       printf("\n");
     }
-    mysql_free_result(result);
+    mysql_free_result(result); // удаляем данные
   }
 }
