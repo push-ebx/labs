@@ -122,9 +122,9 @@ queue<char> generate_postfix_exp(string expr)
 			if (!_stack.empty())
 			{
 				while (is_operator(_stack.back()) && (op_left_assoc(op) &&
-																							get_priority(_stack.back()) >= get_priority(op)) ||
-							 !op_left_assoc(op) &&
-									 get_priority(_stack.back()) > get_priority(op))
+							get_priority(_stack.back()) >= get_priority(op)) ||
+							!op_left_assoc(op) &&
+							get_priority(_stack.back()) > get_priority(op))
 				{
 
 					_queue.push(_stack.back());
