@@ -85,7 +85,7 @@ string remove_extra(string expr)
 	{
 		if (expr[i] == '|' || expr[i] == '&')
 			i++;
-		new_expr += expr[i];
+		new_expr += expr[i]; 
 	}
 	return new_expr;
 }
